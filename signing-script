@@ -1,0 +1,26 @@
+#!/bin/bash -eu
+
+############################
+#   SIGNING THE REQUEST    #
+############################
+#1.Generating the private key
+openssl genrsa -out client_private_key_php_dotnet.pem
+
+#2.Generate the public key
+openssl rsa -in client_private_key_php_dotnet.pem -pubout -out client_public_key_php_dotnet.pem
+
+# The key to sign takes the following format
+# <HTTPMethod><space><HTTP-URL-WITH-QUERY-STRING><space><Client-id>.<Request-Time|Response-Time>.<HTTP body>
+
+sampleStr="POST https://test.com/?test=hello 8989898098a.2020 2020-12-24T09:46:52.308Z {amount:'100'}"
+fakeStr="POST https://test.com/?test=hello"
+
+# signing the string should work like this
+echo -n "$sampleStr" | openssl dgst -sha256 -sign client_private_key_php_dotnet.pem | openssl enc -base64 -out signedRequest
+
+###############################
+#   VERIFYING THE SIGNATURE   #
+###############################
+
+openssl enc  -base64 -d -in signedRequest -out sign256
+echo -n "$fakeStr" | openssl dgst -sha256 -verify client_public_key_php_dotnet.pem -signature sign256  
